@@ -1,0 +1,124 @@
+<html>
+    <head>
+        <style>
+            #content{
+                position: absolute;
+                top: 50%;
+                left: 45%;
+                margin-top: -50px;
+                margin-left: -50px;
+                width: 400px;
+                height: 100px;
+            }
+            #control1{
+                float: left;
+                width: 70%;
+            }
+            #control2{
+                float: left;
+                width: 30%;
+            }
+            #search_box{
+                width:250px;
+            }
+            #hint_list{
+                list-style-type: none;
+                border:1px solid black;
+                padding:0;
+                width: 248px;
+            }
+
+            #hint_list li{
+                text-align: left;
+                padding-left: 2px;
+            }
+            #hint_list li:hover{
+                background-color: lightgray;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content">
+            <div>
+                <div id="control1">
+                    <input type="text" id="search_box" />
+                </div>
+                <div id="control2">
+                    <input type="button" id="search_botton" value="Add" />
+                </div>
+            </div>
+            <ul id="hint_list">
+            </ul>
+        </div>
+        <script>
+            (function(){
+                var searchBox = document.getElementById("search_box");
+                searchBox.addEventListener('input', (e)=>{
+                    search(searchBox, true)
+                })
+                
+                var searchBotton = document.getElementById("search_botton");
+                searchBotton.addEventListener('click', (e)=>{
+                    var xmlHttp = new XMLHttpRequest();
+                    xmlHttp.onreadystatechange = function() { 
+                        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                            {
+                                searchBox.value="";
+                                search(searchBox, false)
+                            }
+                        }
+                    xmlHttp.open( "POST", `/add?keyword=${encodeURIComponent(searchBox.value)}`, true); // false for synchronous request
+                    xmlHttp.send(null);
+                })
+                var ul = document.getElementById("hint_list")
+                window.addEventListener('click', (e)=>{
+                    if (!searchBotton.contains(e.target) && !searchBox.contains(e.target) && !ul.contains(e.target)){
+                        ul.style.display="none"
+                    }
+                })
+
+                window.addEventListener('click', (e)=>{
+                    if (searchBox.contains(e.target)){
+                        ul.style.display="block"
+                    }
+                })
+            })()
+
+            function clearHints(){
+                var ul = document.getElementById("hint_list")
+                while (ul.firstChild){
+                    ul.removeChild(ul.firstChild)
+                }
+            }
+
+            function search(searchBox, showHint){
+                var xmlHttp = new XMLHttpRequest();
+                    xmlHttp.onreadystatechange = function() { 
+                        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                            {
+                                var hints = JSON.parse(xmlHttp.responseText);
+                                if (hints.constructor!==Array){
+                                    hints=[]
+                                }
+                                var ul = document.getElementById("hint_list")
+                                while (ul.firstChild){
+                                    ul.removeChild(ul.firstChild)
+                                }
+                                hints.forEach(hint => {
+                                    var li = document. createElement("li");
+                                    li.appendChild(document. createTextNode(hint));
+                                    li.addEventListener('click',(e)=>{
+                                        searchBox.value = li.innerHTML;
+                                        clearHints();
+                                    })
+                                    ul.appendChild(li);
+                                });
+                                ul.style.display= showHint ? "block" : "none";
+                            }
+                    }
+                    xmlHttp.open( "GET", `/search?keyword=${encodeURIComponent(searchBox.value)}`, true); // false for synchronous request
+                    xmlHttp.send(null);
+            }
+        </script>
+    </body>
+</html>

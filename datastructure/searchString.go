@@ -84,5 +84,8 @@ func (searchString SearchString) GetChildOf(ancestor Trier) (Trier, error) {
 func (searchString SearchString) Less(t Trier) bool {
 	anotherSearchString, _ := t.(SearchString)
 	//descending
+	if searchString.Count == anotherSearchString.Count {
+		return searchString.Text < anotherSearchString.Text
+	}
 	return searchString.Count > anotherSearchString.Count
 }

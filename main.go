@@ -1,26 +1,59 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 
 	"github.com/alanzeng6181/autocomplete/datastructure"
 )
 
+func search(w http.ResponseWriter, r *http.Request) {
+	keywords, ok := r.URL.Query()["keyword"]
+	if !ok || len(keywords) < 1 {
+		w.WriteHeader(400)
+		w.Write([]byte("keyword is not specified"))
+	}
+
+	topN := trie.GetTopN(datastructure.MakeSearchString1(keywords[0]))
+	arr := make([]string, 0)
+	for _, s := range topN {
+		arr = append(arr, s.Text)
+	}
+	data, _ := json.Marshal(arr)
+	w.Write(data)
+}
+
+var trie *datastructure.Trie[datastructure.SearchString] = datastructure.NewTrie[datastructure.SearchString]()
+
+func add(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" && r.Method != "PUT" {
+		w.WriteHeader(405)
+		return
+	}
+
+	keywords, ok := r.URL.Query()["keyword"]
+	if !ok || len(keywords) < 1 {
+		w.WriteHeader(400)
+		w.Write([]byte("keyword is not specified"))
+	}
+
+	_, err := trie.Add(datastructure.MakeSearchString(keywords[0], 1))
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("error occured while adding keyword %s, due to %v", keywords[0], err)))
+	} else {
+		w.WriteHeader(200)
+	}
+}
+
 func main() {
-	trie := datastructure.NewTrie[datastructure.SearchString]()
-	trie.Add(datastructure.MakeSearchString("abc", 100))
-	trie.Add(datastructure.MakeSearchString("fabc", 50))
-	trie.Add(datastructure.MakeSearchString("agbc", 100))
-	trie.Add(datastructure.MakeSearchString("adbc", 100))
-	trie.Add(datastructure.MakeSearchString("ggfabc", 1850))
-	trie.Add(datastructure.MakeSearchString("zgzdfgfabc", 150))
-	trie.Add(datastructure.MakeSearchString("adasdfbc", 100))
-	trie.Add(datastructure.MakeSearchString("adbc", 100))
-	trie.Add(datastructure.MakeSearchString("abdc", 60))
-	trie.Add(datastructure.MakeSearchString("aadsfbc", 110))
-	trie.Add(datastructure.MakeSearchString("tsdasdeaadsfbc", 110))
-	fmt.Println(trie.String())
-	fmt.Println(trie.GetTopN(datastructure.MakeSearchString1("abde")))
-	fmt.Println(trie.GetTopN(datastructure.MakeSearchString1("zg")))
-	fmt.Println(trie.GetTopN(datastructure.MakeSearchString1("zzz")))
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
+	http.HandleFunc("/add", add)
+	http.HandleFunc("/search", search)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
