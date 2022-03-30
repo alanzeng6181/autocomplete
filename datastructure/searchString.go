@@ -14,6 +14,14 @@ func (searchString SearchString) String() string {
 	return fmt.Sprintf("{text:%s, count:%d}", searchString.Text, searchString.Count)
 }
 
+func NewSearchString(text string, count int) *SearchString {
+	return &SearchString{text, count}
+}
+
+func NewSearchString1(text string) *SearchString {
+	return &SearchString{Text: text}
+}
+
 func MakeSearchString(text string, count int) SearchString {
 	return SearchString{text, count}
 }

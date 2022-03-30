@@ -19,7 +19,7 @@ func (trie Trie[T]) Add(t T) (bool, error) {
 	return trie.Root.Add(t)
 }
 
-func (trie Trie[T]) GetTopN(t T) []T {
+func (trie Trie[T]) GetTopN(t T) []*T {
 	if target := trie.Root.Find(t); target != nil {
 		return target.TopN.data
 	}

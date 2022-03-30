@@ -8,7 +8,9 @@ type TrieNode[T Trier] struct {
 }
 
 func NewTrieNode[T Trier](t T) *TrieNode[T] {
-	return &TrieNode[T]{Data: t, Children: make([]*TrieNode[T], 0), NodeType: Keyword, TopN: MakeTopN1(t)}
+	trieNode := TrieNode[T]{Data: t, Children: make([]*TrieNode[T], 0), NodeType: Keyword}
+	trieNode.TopN = MakeTopN1(&trieNode.Data)
+	return &trieNode
 }
 
 func NewTrieNode1[T Trier]() *TrieNode[T] {
@@ -18,7 +20,7 @@ func NewTrieNode1[T Trier]() *TrieNode[T] {
 func NewTrieNode2[T Trier](t T, nodeType NodeType) *TrieNode[T] {
 	trieNode := TrieNode[T]{Data: t, Children: make([]*TrieNode[T], 0), NodeType: nodeType}
 	if nodeType == Keyword {
-		trieNode.TopN = MakeTopN1(t)
+		trieNode.TopN = MakeTopN1(&trieNode.Data)
 	} else {
 		trieNode.TopN = MakeTopN[T]()
 	}
@@ -28,7 +30,7 @@ func NewTrieNode2[T Trier](t T, nodeType NodeType) *TrieNode[T] {
 func (node *TrieNode[T]) Add(t T) (bool, error) {
 	defer func() {
 		if node.NodeType == Keyword {
-			node.TopN = MakeTopN1(node.Data)
+			node.TopN = MakeTopN1(&node.Data)
 		} else {
 			node.TopN = MakeTopN[T]()
 		}
@@ -42,7 +44,12 @@ func (node *TrieNode[T]) Add(t T) (bool, error) {
 		if childCompareResult == Equal {
 			newData, _ := c.Data.Add(t)
 			c.Data = newData.(T)
-			c.TopN = MakeTopN1(c.Data)
+			if c.NodeType == Keyword {
+				c.TopN.Sort()
+			} else {
+				c.NodeType = Keyword
+				c.TopN.Merge(MakeTopN1(&node.Data))
+			}
 			return true, nil
 		}
 		if childCompareResult == IsChild || childCompareResult == IsDescendent {

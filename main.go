@@ -54,6 +54,7 @@ func main() {
 	http.Handle("/", fs)
 	http.HandleFunc("/add", add)
 	http.HandleFunc("/search", search)
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	const port int32 = 8080
+	log.Printf("listening at %d...\n", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
